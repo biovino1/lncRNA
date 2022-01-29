@@ -232,13 +232,14 @@ def measure_dicts(transcriptdict):
     # Append each dictionary of fasta dictionaries to a list
     for i in range(1, dictcount+1):
         dictlist.append(globals()['fastadict' + str(500 * i)])
+    dictlist.append(fastadictlarge)
 
     # Print counts to check amount of fasta sequences there are in each file
     for i in range(1, dictcount+1):
         print(globals()['count'+str(i*500)])
     print(countlarge)
 
-    return fastadict500, fastadict1000, fastadict1500, fastadict2000, fastadict2500, fastadictlarge
+    return dictlist
 
 def main():
     """=================================================================================================================
@@ -262,38 +263,24 @@ def main():
     transcriptdict = get_fasta(file1, exondict_sorted)
 
     # Call the measure_dicts function providing the fasta dictionary as a parameter
-    fastadict500, fastadict1000, fastadict1500, fastadict2000, fastadict2500, fastadictlarge = measure_dicts(transcriptdict)
+    dictlist = measure_dicts(transcriptdict)
 
-    # Define folder path
+    # Define folder path and make directory for fastadict files
     path = "C:/Users/biovi/PycharmProjects/BIOL494/RawData"
-
-    # Make directory for fastadict files
     os.mkdir(path)
 
-    # Open and write to file for fasta sequences <= x in length
-    with open(path+"/lncRNA_fasta_500.txt", "w") as file500:
+    # Use a for loop to open and write files dependent on length of dictlist
+    # Each dictionary is written into a separate file
+    for i in range(1, len(dictlist)):
 
-        # Pretty print the dictionary into output file
-        pprint(fastadict500, stream=file500, sort_dicts=False)
+        with open(path+"/lncRNA_fasta_"+str(i*500)+".txt", "w") as globals()['file'+str(i*500)]:
 
-    with open(path+"/lncRNA_fasta_1000.txt", "w") as file1000:
+            # Pretty print the dictionary into output file
+            pprint(globals()['fastadict'+str(i*500)], stream=globals()['file'+str(i*500)], sort_dicts=False)
 
-        pprint(fastadict1000, stream=file1000, sort_dicts=False)
+    # Write fastadictlarge into a separate file
+    with open(path+"lncRNA_fasta_large.txt", "w") as filelarge:
 
-    with open(path+"/lncRNA_fasta_1500.txt", "w") as file1500:
-
-        pprint(fastadict1500, stream=file1500, sort_dicts=False)
-
-    with open(path+"/lncRNA_fasta_2000.txt", "w") as file2000:
-
-        pprint(fastadict2000, stream=file2000, sort_dicts=False)
-
-    with open(path+"/lncRNA_fasta_2500.txt", "w") as file2500:
-
-        pprint(fastadict2500, stream=file2500, sort_dicts=False)
-
-    with open(path+"/lncRNA_fasta_large.txt", "w") as filelarge:
-
-        pprint(fastadictlarge, stream=filelarge, sort_dicts=False)
+        pprint(dictlist[len(dictlist)-1], stream=filelarge, sort_dicts=False)
 
 main()
