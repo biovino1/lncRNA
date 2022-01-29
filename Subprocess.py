@@ -1,17 +1,19 @@
-#
-# Ben Iovino
-# BIOL494, 1/17/22
-# Subprocess
-# This script runs several scripts to create the desired directories/files
-#
+"""=====================================================================================================================
+This script runs several scripts at once and creates/deletes the desired directories.
+
+Ben Iovino  1/28/2022   BIOL494, lncRNA Sequence and Folding
+====================================================================================================================="""
 
 import subprocess as sub
 import shutil
 
 def main():
+    """=================================================================================================================
+    The main function calls the desired scripts and creates/deletes scripts.
+    ================================================================================================================="""
 
     # Define folder path
-    path = "C:/Users/biovi/PycharmProjects/BIOL494/RawData"
+    path = "C:/Users/biovi/PycharmProjects/BIOL494"
 
     sub.run(['python', 'Genome_Reading.py'])
 

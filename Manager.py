@@ -1,18 +1,17 @@
-#
-# Ben Iovino
-# BIOL494, 1/21/22
-# Manager
-# This program runs multiple jobs using subprocess.Popen()
-# until all jobs are complete.
-#
+"""=====================================================================================================================
+This script runs multiple jobs using subprocess.Popen() until all jobs are complete.
 
-# Import libraries
+Ben Iovino  1/28/2022   BIOL494, lncRNA Sequence and Folding
+====================================================================================================================="""
+
 import subprocess
 import random
 from time import sleep
 
-# Define manager function
 def manager():
+    """=================================================================================================================
+    This function runs jobs
+    ================================================================================================================="""
 
     # Initialize jobs list and number of jobs
     jobs = []

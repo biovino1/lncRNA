@@ -1,17 +1,16 @@
-#
-# Ben Iovino
-# BIOL494, 1/17/22
-# Fasta Cleaning
-# This scripts takes a fasta file with more than one sequence and
-# prints each individual sequence into it's own file.
-#
+"""=====================================================================================================================
+This scripts takes a fasta file with more than one sequence and prints each individual sequence into it's own file.
+
+Ben Iovino  1/28/2022   BIOL494, lncRNA Sequence and Folding
+====================================================================================================================="""
 
 import os
 import shutil
 
-# Define a function that accepts a file with many fasta sequences and
-# writes them into separate files.
 def parse_fasta(file):
+    """=================================================================================================================
+    This function accepts a file with many fasta sequence and writes them into individual files.
+    ================================================================================================================="""
 
     # Define folder path
     path = "C:/Users/biovi/PycharmProjects/BIOL494/"
@@ -48,7 +47,7 @@ def parse_fasta(file):
 
                 # Write fasta sequence to file named after gene ID
                 with open('C:/Users/biovi/PycharmProjects/BIOL494/Data/lncRNA{}/'
-                          '{}.txt'.format(filenumber, sequence_id.split()[1]), 'w') as fastafile:
+                          '{}.fa'.format(filenumber, sequence_id.split()[1]), 'w') as fastafile:
 
                     # Write sequence ID into file
                     fastafile.write(sequence_id)
@@ -74,6 +73,11 @@ def parse_fasta(file):
 
 # Use main function to call for data structure file
 def main():
+    """=================================================================================================================
+    The main function is used to define the folder path and to make a directory for the individual, parsed fasta files.
+    It then opens the CleanData folder and calls parse_fasta() to split the large fasta file into individual fasta
+    files.
+    ================================================================================================================="""
 
     # Define folder path
     path = "C:/Users/biovi/PycharmProjects/BIOL494"

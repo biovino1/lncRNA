@@ -1,21 +1,20 @@
-#
-# Ben Iovino
-# BIOL494, 1/17/22
-# Genome Reading
-# This program reads a GTF file and creates a multilayered data structure.
-# Every exon in each transcript is stored as a dictionary ID with it's chromosome,
-# beginning, and end positions stored as a list for the value. The script then
-# reads the human genome file one chromosome at a time. The dictionary from the
-# GTF file is used to check the genome file for each transcript's FASTA sequence.
-# Exons with the same transcript ID have their FASTA sequence combined, and these
-# combined sequences are printed out into files according to their length.
-#
+"""=====================================================================================================================
+This program reads a GTF file and creates a multilayered data structure. Every exon in each transcript is stored as a
+dictionary ID with it's chromosome number, beginning, and end positions store as a list for the value. The script then
+reads the human genome file one chromosome at a time. The dictionary from the GTF file is used to check the genome file
+for each exon's fasta sequence.
+
+Ben Iovino  1/28/2022   BIOL494, lncRNA Sequence and Folding
+====================================================================================================================="""
 
 from pprint import pprint
 import os
 
-# Define a function that accepts a GTF file and returns a sorted dictionary
 def get_dict(file):
+    """=================================================================================================================
+    This function accepts a GTF file as a parameter and returns a sorted dictionary containing each exon as a dictionary
+    id and list as its value. The list contains the chromosome number, beginning, and end positions on the chromosome.
+    ================================================================================================================="""
 
     # Initialize a dictionary for transcript ID's, used as an exon counter
     genedict = dict()
@@ -74,13 +73,13 @@ def get_dict(file):
         # Add each exon to dictionary of sorted exons
         exondict_sorted[id] = exondict[id]
 
-    # Return the sorted data structure
     return exondict_sorted
 
-# Define a function that accepts a chromosome_id, chromosome sequence, and
-# the sorted dictionary. This function returns a dictionary of the transcript ID
-# from the sorted dictionary and fasta sequence from the genome
 def process_chromosome(chromosome_id, chromosome, exondict_sorted):
+    """=================================================================================================================
+    This accepts a chromosome id, entire chromosome sequence, and the sorted dictionary from get_dict(). It returns a
+    dictionary of the exon ID from the sorted dictionary and its fasta sequence from the genome.
+    ================================================================================================================="""
 
     # Split chromosome ID by spaces
     chromosome_id = chromosome_id.split(' ')
@@ -110,13 +109,17 @@ def process_chromosome(chromosome_id, chromosome, exondict_sorted):
             # Append the fasta sequence to the exon ID value
             fastadict[item[0]].append(sequence)
 
-    # Return the dictionary of sequences
     return fastadict
 
-# Define a function that accepts the genome file and sorted dictionary
 def get_fasta(genome, exondict_sorted):
+    """=================================================================================================================
+    This function accepts a genome file and the sorted dictionary from get_dict(). It opens the genome file and moves
+    sequentially from each chromosome. The chromosome id is stored along with its entire sequence. The sorted dictionary
+    of exons is then read and process_chromosome() is used to read the sequence of the chromosome and extract the exon
+    sequence, which is stored in a new dictionary.
+    ================================================================================================================="""
 
-    # Initialize a dictionary with gene ID as keys and a list as their value
+    # Initialize a dictionary with exon ID as keys and a list as their value
     fastadict = dict()
 
     # Open genome file
@@ -183,26 +186,19 @@ def get_fasta(genome, exondict_sorted):
             # Add the fasta sequence of the new exon to the previous one(s)
             transcriptdict[keyid][1] += str(item[1][1])
 
-    # Return dictionary of fasta sequences
     return transcriptdict
 
-# Define a function that accepts the dictionary of fasta sequences, measures length of seqs,
-# and adds them to a corresponding dictionary
 def measure_dicts(transcriptdict):
+    """=================================================================================================================
+    This function accepts a dictionary of fasta sequences, measures the length of the sequences, and adds them to a
+    dictionary corresponding to their length.
+    ================================================================================================================="""
 
-    # Initialize dictionaries
-    fastadict500 = dict()
-    fastadict1000 = dict()
-    fastadict1500 = dict()
-    fastadict2000 = dict()
-    fastadict2500 = dict()
+    # Initialize dictionaries and counts
+    for i in range(1, 6):
+        globals()['fastadict' + str(500 * i)] = dict()
+        globals()['count'+str(500 * i)] = 0
     fastadictlarge = dict()
-
-    count500 = 0
-    count1000 = 0
-    count1500 = 0
-    count2000 = 0
-    count2500 = 0
     countlarge = 0
 
     # Use a for loop to iterate over each item in the dictionary
@@ -216,37 +212,26 @@ def measure_dicts(transcriptdict):
             fasta.append(item[1][1][i:i+n])
         item[1][1] = fasta
 
-        # Determine length of fasta sequence and update the corresponding dictionary
-        if 0 < item[1][0] <= 500:
-            count500 += 1
-            fastadict500.update({item[0]: item[1]})
-
-        if 500 < item[1][0] <= 1000:
-            count1000 += 1
-            fastadict1000.update({item[0]: item[1]})
-
-        if 1000 < item[1][0] <= 1500:
-            count1500 += 1
-            fastadict1500.update({item[0]: item[1]})
-
-        if 1500 < item[1][0] <= 2000:
-            count2000 += 1
-            fastadict2000.update({item[0]: item[1]})
-
-        if 2000 < item[1][0] <= 2500:
-            count2500 += 1
-            fastadict2500.update({item[0]: item[1]})
+        # Use a for loop
+        for i in range(0,5):
+            if (i*500) < item[1][0] <= (500+i*500):
+                globals()['count'+str(500+i*500)] += 1
+                globals()['fastadict'+str(500+i*500)].update({item[0]: item[1]})
 
         if 2500 < item[1][0]:
-            countlarge +=1
+            countlarge += 1
             fastadictlarge.update({item[0]: item[1]})
 
     print(count500, count1000, count1500, count2000, count2500, countlarge)
-    # Return each dictionary
+
     return fastadict500, fastadict1000, fastadict1500, fastadict2000, fastadict2500, fastadictlarge
 
-# Use main function to store FASTA sequences into a file
 def main():
+    """=================================================================================================================
+    The main function is used to ask for a GTF and genome file, calls each function to create dictionaries with fasta
+    sequences of bounded lengths, creates a directory for files, and then pretty prints these dictionaries to
+    corresponding files in the new directory.
+    ================================================================================================================="""
 
     # Prompt the user for GTFoutput file name
     file = input("Enter GTF file name: ")
@@ -297,5 +282,4 @@ def main():
 
         pprint(fastadictlarge, stream=filelarge, sort_dicts=False)
 
-# End main function
 main()
