@@ -248,11 +248,10 @@ def main():
     corresponding files in the new directory.
     ================================================================================================================="""
 
-    # Prompt the user for GTFoutput file name
+    # Prompt the user for GTF and genome file names
     file = input("Enter GTF file name: ")
     print()
 
-    # Prompt the user for genome file name
     file1 = input("Enter genome file name: ")
     print()
 
@@ -279,8 +278,7 @@ def main():
             pprint(globals()['fastadict'+str(i*500)], stream=globals()['file'+str(i*500)], sort_dicts=False)
 
     # Write fastadictlarge into a separate file
-    with open(path+"lncRNA_fasta_large.txt", "w") as filelarge:
-
+    with open(path+"/lncRNA_fasta_large.txt", "w") as filelarge:
         pprint(dictlist[len(dictlist)-1], stream=filelarge, sort_dicts=False)
 
 main()
