@@ -191,11 +191,17 @@ def get_fasta(genome, exondict_sorted):
 def measure_dicts(transcriptdict):
     """=================================================================================================================
     This function accepts a dictionary of fasta sequences, measures the length of the sequences, and adds them to a
-    dictionary corresponding to their length.
+    dictionary corresponding to their length. The amount of dictionaries is intialized at the very beginning, and the
+    lengths are inherent in the loops that create them i.e. dictcount = 5; 'fastadict' + str(500 * i) = fastadict in
+    increments of 500 for 5 dictionaries. fastadictlarge catches all sequences above the maximum specified length.
     ================================================================================================================="""
 
+    # Initialize the amount of dictionaries you want to create and a list for the dictionaries
+    dictcount = 5
+    dictlist = list()
+
     # Initialize dictionaries and counts
-    for i in range(1, 6):
+    for i in range(1, dictcount+1):
         globals()['fastadict' + str(500 * i)] = dict()
         globals()['count'+str(500 * i)] = 0
     fastadictlarge = dict()
@@ -212,17 +218,25 @@ def measure_dicts(transcriptdict):
             fasta.append(item[1][1][i:i+n])
         item[1][1] = fasta
 
-        # Use a for loop
-        for i in range(0,5):
-            if (i*500) < item[1][0] <= (500+i*500):
-                globals()['count'+str(500+i*500)] += 1
-                globals()['fastadict'+str(500+i*500)].update({item[0]: item[1]})
+        # Use a for loop to add the fasta sequence to the corresponding dictionary and update the count
+        for i in range(1, dictcount+1):
+            if ((i-1)*500) < item[1][0] <= (i*500):
+                globals()['count'+str(i*500)] += 1
+                globals()['fastadict'+str(i*500)].update({item[0]: item[1]})
 
-        if 2500 < item[1][0]:
+        # Add sequences above the desired length to fastadictlarge
+        if (500*dictcount) < item[1][0]:
             countlarge += 1
             fastadictlarge.update({item[0]: item[1]})
 
-    print(count500, count1000, count1500, count2000, count2500, countlarge)
+    # Append each dictionary of fasta dictionaries to a list
+    for i in range(1, dictcount+1):
+        dictlist.append(globals()['fastadict' + str(500 * i)])
+
+    # Print counts to check amount of fasta sequences there are in each file
+    for i in range(1, dictcount+1):
+        print(globals()['count'+str(i*500)])
+    print(countlarge)
 
     return fastadict500, fastadict1000, fastadict1500, fastadict2000, fastadict2500, fastadictlarge
 
