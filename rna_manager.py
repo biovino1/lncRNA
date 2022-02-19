@@ -6,6 +6,8 @@ Ben Iovino  2/17/2022   BIOL494, lncRNA Sequence and Folding
 
 import subprocess
 import os
+import random
+import time
 
 
 def get_file_list(directory):
@@ -25,6 +27,23 @@ def get_file_list(directory):
     # Return list of file names
     return filelist
 
+def generate_sleep():
+    """=================================================================================================================
+    This function generates a specified amount of sleep functions with randomized times and writes each command
+    into a file.
+    ================================================================================================================="""
+
+    # Set directory for sleep files
+    path = "C:/Users/biovi/PycharmProjects/BIOL494/TestFiles/SleepFiles"
+    os.mkdir(path)
+
+    # Generate sleep functions with randomized times, write each one into a file
+    for i in range(0, 1000):
+        with open(path+f'/sleep_function_{i}', 'w') as sleep_file:
+            sleep_file.write(f'time.sleep({random.random()})')
+
+
+
 def manager(filelist, directory):
     """=================================================================================================================
     This function runs jobs
@@ -38,13 +57,13 @@ def manager(filelist, directory):
     # Use a for loop to iterate over every file in filelist
     for file in filelist:
 
+        file = directory+file
+
         # Use a while loop to run jobs while
         while nrunning < njobs:
 
             # Initialize process id from Popen
-            pid = subprocess.Popen(['python', 'C:/Users/biovi/PycharmProjects/RNA/xios_from_rnastructure.py', 'i',
-                                    f'{directory}', "-f", f"{file}"])
-
+            pid = subprocess.Popen(['python', f'{file}', 'shell=True'])
             print(pid)
 
             # Add 1 to nrunning and add pid to jobs list
@@ -66,10 +85,13 @@ def main():
     ================================================================================================================="""
 
     # Enter directory path
-    directory = 'C:/Users/biovi/PycharmProjects/BIOL494/TestFiles/TestData/'
+    directory = 'C:/Users/biovi/PycharmProjects/BIOL494/TestFiles/SleepFiles/'
 
     # Call the get_file_list function providing the directory path as a parameter
     filelist = get_file_list(directory)
+
+    # Call random function to randomize filelist
+    random.shuffle(filelist)
 
     # Call manager() function
     manager(filelist, directory)
