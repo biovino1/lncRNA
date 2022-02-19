@@ -57,25 +57,27 @@ def manager(filelist, directory):
     # Use a for loop to iterate over every file in filelist
     for file in filelist:
 
+        # Add directory path to file and get command
         file = directory+file
+        with open(file, 'r') as command_file:
+            command = command_file.read()
 
         # Use a while loop to run jobs while
         while nrunning < njobs:
 
             # Initialize process id from Popen
-            pid = subprocess.Popen(['python', f'{file}', 'shell=True'])
-            print(pid)
+            pid = subprocess.Popen([command])
 
             # Add 1 to nrunning and add pid to jobs list
             nrunning += 1
             jobs.append(pid)
 
-            # Check if jobs are finished
-            for j in jobs:
+        # Check if jobs are finished
+        for j in jobs:
 
-                if j == None:
-                    nrunning -= 1
-                    jobs.remove(pid)
+            if j == None:
+                nrunning -= 1
+                jobs.remove(pid)
 
 
 def main():
