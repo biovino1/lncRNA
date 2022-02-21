@@ -33,6 +33,7 @@ def generate_sleep():
     into a file.
     ================================================================================================================="""
 
+    '''
     # Set directory for sleep files
     path = "C:/Users/biovi/PycharmProjects/BIOL494/TestFiles/SleepFiles"
     os.mkdir(path)
@@ -41,29 +42,63 @@ def generate_sleep():
     for i in range(0, 1000):
         with open(path+f'/sleep_function_{i}', 'w') as sleep_file:
             sleep_file.write(f'time.sleep({random.random()})')
+    '''
+
+    sleep_list = list()
+    for i in range(0, 100):
+        sleep_list.append(f'time.sleep({random.randint(0, 5)})')
+
+    return sleep_list
 
 
-
-def manager(filelist, directory):
+def manager(filelist, directory, sleep_list):
     """=================================================================================================================
-    This function runs jobs
+    This function runs jobs using subprocess.Popen() and polls until all jobs are complete.
     ================================================================================================================="""
 
     # Initialize jobs list and number of jobs
     jobs = []
     njobs = 20
     nrunning = 0
+    jobcount = 0
+    jobscomplete = []
 
+    for i in range(njobs):
+        sleep_function = sleep_list[jobcount]
+        pid = subprocess.Popen(sleep_function, shell=True, stdout=subprocess.DEVNULL)
+        jobs.append(pid)
+        jobcount += 1
+
+    delay = 2
+    while nrunning < njobs:
+        print('\nPolling')
+
+        # Go through each job in job list
+        for i in range(njobs):
+
+            # Check if job is done
+            if jobs[i] == 'Done':
+                continue
+
+            # If job returns, it is finished
+            if jobs[i] != None:
+                print('finished')
+                jobscomplete.append(jobs[i])
+                jobs[i] = 'Done'
+                nrunning += 1
+
+        time.sleep(delay)
+    '''
     # Use a for loop to iterate over every file in filelist
-    for file in filelist:
+    for sleepf in sleep_list:
 
-        file = directory+file
+        # file = directory+file
 
         # Use a while loop to run jobs while
         while nrunning < njobs:
 
             # Initialize process id from Popen
-            pid = subprocess.Popen(['python', f'{file}', 'shell=True'])
+            pid = subprocess.Popen(sleepf, shell=True)
             print(pid)
 
             # Add 1 to nrunning and add pid to jobs list
@@ -76,6 +111,7 @@ def manager(filelist, directory):
                 if j == None:
                     nrunning -= 1
                     jobs.remove(pid)
+    '''
 
 
 def main():
@@ -93,8 +129,11 @@ def main():
     # Call random function to randomize filelist
     random.shuffle(filelist)
 
+    sleep_list = generate_sleep()
+    random.shuffle(sleep_list)
+
     # Call manager() function
-    manager(filelist, directory)
+    manager(filelist, directory, sleep_list)
 
 main()
 
