@@ -69,7 +69,6 @@ def manager(filelist, directory, sleep_list):
         jobs.append(pid)
         jobcount += 1
 
-    delay = 2
     while nrunning < njobs:
         print('\nPolling')
 
@@ -78,16 +77,15 @@ def manager(filelist, directory, sleep_list):
 
             # Check if job is done
             if jobs[i] == 'Done':
+                jobscomplete.append(jobs[i])
                 continue
 
             # If job returns, it is finished
             if jobs[i] != None:
                 print('finished')
-                jobscomplete.append(jobs[i])
                 jobs[i] = 'Done'
                 nrunning += 1
 
-        time.sleep(delay)
     '''
     # Use a for loop to iterate over every file in filelist
     for sleepf in sleep_list:
