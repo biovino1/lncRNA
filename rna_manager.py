@@ -46,7 +46,7 @@ def generate_sleep():
 
     sleep_list = list()
     for i in range(0, 100):
-        sleep_list.append(f'time.sleep({random.randint(0, 5)})')
+        sleep_list.append(f'timeout {random.randint(0, 5)}')
 
     return sleep_list
 
@@ -63,14 +63,16 @@ def manager(filelist, directory, sleep_list):
     jobcount = 0
     jobscomplete = []
 
-    for i in range(njobs):
-        sleep_function = sleep_list[jobcount]
-        pid = subprocess.Popen(sleep_function, shell=True, stdout=subprocess.DEVNULL)
-        jobs.append(pid)
-        jobcount += 1
+    while sleep_list:
 
-    while nrunning < njobs:
-        print('\nPolling')
+        while nrunning < njobs:
+            print('\nPolling')
+
+            job = sleep_list.pop()
+            jobs.append(job)
+            print(job)
+            process = subprocess.Popen(job, shell=True)
+            print(process.poll())
 
         # Go through each job in job list
         for i in range(njobs):

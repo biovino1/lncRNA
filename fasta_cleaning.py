@@ -41,7 +41,7 @@ def make_fasta(file, filestring):
 
                 f.write(str(line))
 
-            # Add extra '>' at the end so Fasta_Parsing.py reads last sequence
+            # Add extra '>' at the end so fasta_parsing.py reads last sequence
             f.write(str('>'))
 
 def main():
