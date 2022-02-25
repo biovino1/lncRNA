@@ -46,7 +46,7 @@ def generate_sleep():
 
     sleep_list = list()
     for i in range(0, 100):
-        sleep_list.append(f'timeout /t {random.randint(0, 5)}')
+        sleep_list.append(f'timeout {random.randint(0, 5)}')
 
     return sleep_list
 
@@ -60,34 +60,31 @@ def manager(filelist, directory, sleep_list):
     jobs = []
     njobs = 20
     nrunning = 0
-    jobcount = 0
     jobscomplete = []
 
+    # Run until sleep_list is empty
     while sleep_list:
 
+        # Run as long as amount of jobs running is less than njobs
         while nrunning < njobs:
             print('\nPolling')
 
+            # Initialize job and use Popen
             job = sleep_list.pop()
             jobs.append(job)
-            print(job)
-            process = subprocess.Popen([job], shell=True)
+            subprocess.Popen(job, shell=True)
             nrunning += 1
-            print(process)
 
-        # Go through each job in job list
+        # Go through each job
         for i in range(njobs):
-
-            # Check if job is done
-            if jobs[i] == 'Done':
-                jobscomplete.append(jobs[i])
 
             # If job returns, it is finished
             if jobs[i] != None:
-                print('finished')
+                jobscomplete.append(jobs[i])
                 jobs[i] = 'Done'
                 nrunning -= 1
 
+        print(len(jobscomplete))
     '''
     # Use a for loop to iterate over every file in filelist
     for sleepf in sleep_list:
