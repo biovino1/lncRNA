@@ -78,6 +78,7 @@ def manager(filelist, directory, sleep_list):
         # Go through each job
         for i in range(njobs):
 
+
             # If job returns, it is finished
             if jobs[i] != None:
                 jobscomplete.append(jobs[i])
