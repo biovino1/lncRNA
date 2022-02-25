@@ -45,8 +45,8 @@ def generate_sleep():
     '''
 
     sleep_list = list()
-    for i in range(0, 100):
-        sleep_list.append(f'timeout {random.randint(0, 5)}')
+    for i in range(0, 20):
+        sleep_list.append(f'ping localhost -n {random.randint(50, 100)}')
 
     return sleep_list
 
@@ -58,7 +58,7 @@ def manager(filelist, directory, sleep_list):
 
     # Initialize jobs list and number of jobs
     jobs = []
-    njobs = 20
+    njobs = 3
     nrunning = 0
     jobscomplete = []
 
@@ -71,17 +71,23 @@ def manager(filelist, directory, sleep_list):
 
             # Initialize job and use Popen
             job = sleep_list.pop()
-            jobs.append(job)
-            subprocess.Popen(job, shell=True)
+            print(job)
+            # jobs.append(job)
+            process = subprocess.Popen(job, shell=True)
+
+            # Try sending Popen output into file with file append, add times to file
+
+            jobs.append(process)
+            print(process)
             nrunning += 1
 
         # Go through each job
         for i in range(njobs):
 
-
             # If job returns, it is finished
             if jobs[i] != None:
                 jobscomplete.append(jobs[i])
+                jobs.remove(process)
                 jobs[i] = 'Done'
                 nrunning -= 1
 
