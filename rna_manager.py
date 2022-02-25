@@ -7,7 +7,7 @@ Ben Iovino  2/17/2022   BIOL494, lncRNA Sequence and Folding
 import subprocess
 import os
 import random
-import time
+from time import sleep
 
 
 def get_file_list(directory):
@@ -46,7 +46,7 @@ def generate_sleep():
 
     sleep_list = list()
     for i in range(0, 100):
-        sleep_list.append(f'timeout {random.randint(0, 5)}')
+        sleep_list.append(f'timeout /t {random.randint(0, 5)}')
 
     return sleep_list
 
@@ -71,8 +71,9 @@ def manager(filelist, directory, sleep_list):
             job = sleep_list.pop()
             jobs.append(job)
             print(job)
-            process = subprocess.Popen(job, shell=True)
-            print(process.poll())
+            process = subprocess.Popen([job], shell=True)
+            nrunning += 1
+            print(process)
 
         # Go through each job in job list
         for i in range(njobs):
@@ -80,13 +81,12 @@ def manager(filelist, directory, sleep_list):
             # Check if job is done
             if jobs[i] == 'Done':
                 jobscomplete.append(jobs[i])
-                continue
 
             # If job returns, it is finished
             if jobs[i] != None:
                 print('finished')
                 jobs[i] = 'Done'
-                nrunning += 1
+                nrunning -= 1
 
     '''
     # Use a for loop to iterate over every file in filelist
