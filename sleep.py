@@ -26,7 +26,7 @@ if __name__ == '__main__':
     uid = u.hex[:5]
 
     t = time.localtime()
-    now = time.strftime("%I:%M:%S ", t)
+    now = time.strftime("%c ", t)
     sys.stdout.write(f'{uid} started {now} request={sec} seconds\n')
 
     time.sleep(sec)
