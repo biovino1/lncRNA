@@ -28,7 +28,8 @@ def get_file_list(directory):
     for file in os.listdir(directory):
 
         # Append file name to list
-        filelist.append(file)
+        if '.fa' in file:
+          filelist.append(file)
 
     # Return list of file names
     return filelist
@@ -44,14 +45,18 @@ def check_logs(filelist):
 
     path = '/scratch/scholar/biovino/RNAdata/Logs/rna_manager/'
 
-    # Open latest file in directory
+    # Open latest file in directory and get last line in file
     files = os.listdir(path)
     paths = [os.path.join(path, basename) for basename in files]
     latestfile = max(paths, key=os.path.getctime)
     with open(latestfile, 'r') as logfile:
-        lastline = logfile.readlines()[-2] # -2 because lastline is a newline character
+        lastline = logfile.readlines()[-1]
+        lastfasta = lastline.split('\n')[0]
 
-    return lastline
+    startwith = filelist.index(lastfasta) + 1 # Add 1 to start with index position after
+    print(startwith)
+
+    return startwith
 
 
 def manager(directory, filelist, startwith):
@@ -92,7 +97,7 @@ def manager(directory, filelist, startwith):
                       f'-c {directory}ctfiles -x {directory}xiosfiles -f {fasta}'
             print(f'starting job {job_id}: {fasta} ')
             job = sub.Popen(command, shell=True, stdout=xios_log, stderr=xios_log)
-            joblist.append([job_id, job])
+            joblist.append([job_id, job, fasta])
             running += 1
             total_started += 1
 
@@ -100,7 +105,7 @@ def manager(directory, filelist, startwith):
         print('\nPolling')
         to_remove = []
         for j in joblist:
-            id, job = j
+            id, job, fasta = j
 
             print(f'\tjob {id} ...', end='')
             result = job.poll()
@@ -116,7 +121,8 @@ def manager(directory, filelist, startwith):
         # remove all finished jobs. Can't do it above because it shortens the joblist
         # and some jobs don't get polled
         for j in to_remove:
-            manager_log.write(f'{fasta} complete \n')
+            manager_log.write(f'{j[2]}\n') # third index has fasta file name
+            manager_log.flush()
             joblist.remove(j)
             running -= 1
             total_finished += 1
@@ -146,7 +152,6 @@ def main():
         startwith = 0
     else:
         startwith = check_logs(filelist)
-        print(startwith)
 
     # call manager
     manager(directory, filelist, startwith)
