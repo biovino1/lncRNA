@@ -4,13 +4,28 @@ Run multiple jobs using subprocess.Popen().
 total is the total number of jobs to run.
 run is the number to keep running at the same time
 
-Ben Iovino    11 March 2022
+Ben Iovino    5 April 2022
 ================================================================================================="""
 
 import subprocess as sub
 import random
 import time
 import os
+import sys
+
+
+def current_time():
+    """---------------------------------------------------------------------------------------------
+    Gets and returns current time.
+
+    :return now: string with no spaces i.e. DayMonthHourMinutesSecondsMonthYear
+    ---------------------------------------------------------------------------------------------"""
+
+    t = time.localtime()
+    now = time.strftime("%c", t)
+    now = now.replace(' ','').replace(':','')
+
+    return now
 
 
 def get_file_list(directory):
@@ -30,12 +45,13 @@ def get_file_list(directory):
         # Append file name to list
         if '.fa' in file:
           filelist.append(file)
+    filelist.sort()
 
     # Return list of file names
     return filelist
 
 
-def check_logs(filelist):
+def check_logs(base, filelist):
     """---------------------------------------------------------------------------------------------
     Checks existing log files to check what fasta files have already been processed.
 
@@ -43,47 +59,70 @@ def check_logs(filelist):
     :return startwith: position on list to start processing i.e. 0, filelist[0]
     ---------------------------------------------------------------------------------------------"""
 
-    path = '/scratch/scholar/biovino/RNAdata/Logs/rna_manager/'
+    path = base + '/Logs/rna_manager/'
 
     # Open latest file in directory and get last line in file
     files = os.listdir(path)
     paths = [os.path.join(path, basename) for basename in files]
     latestfile = max(paths, key=os.path.getctime)
     with open(latestfile, 'r') as logfile:
-        lastline = logfile.readlines()[-1]
-        lastfasta = lastline.split('\n')[0]
 
-    startwith = filelist.index(lastfasta) + 1 # Add 1 to start with index position after
-    print(startwith)
+        # If manager log is empty, exit script
+        fastalist = list()
+        try:
+          for line in logfile:
+              fastalist.append(line.split('\t')[0])
+          fastalist.sort()
+          lastfasta = fastalist[-1]
+          startwith = filelist.index(lastfasta) + 1  # Add one to index so fasta sequence after last is next up
+          return startwith
+        except IndexError:
+          print('ERROR: manager log is empty')
+          exit(1)
 
-    return startwith
 
-
-def manager(directory, filelist, startwith):
+def manager(base, pythonexe, rnaexe, jobs, w, d, filelist, startwith, directory):
     """---------------------------------------------------------------------------------------------
     Accepts a directory and list of files, runs xios_from_rnastructure.py on each file. Runs a
     certain amount of jobs at once, logs xios_from_rnastructure.py output and logs fasta files
     that went through complete job. Polls every x amount of seconds to check which jobs are complete.
 
-    :param directory: full path of desired files i.e. /scratch/scholar/user/data/
+    :param base: directory of directories i.e. /scratch/scholar/user/data/
+    :param pythonexe: directory with python executable files
+    :param rnaexe: directory with RNAstructure executable files
+    :param jobs: number of jobs to run at once
+    :param w: window for RNAstructure
+    :param d: delta delta G for RNAstructure
     :param filelist: list of files i.e. [fasta1.fa, fasta2.fa, fasta3.fa]
+    :param startwith: index of filelist to start running
+    :param directory: directory of fasta files i.e. /scratch/scholar/user/data/avocado
     ---------------------------------------------------------------------------------------------"""
 
-    # logfile for output
-    t = time.localtime()
-    now = time.strftime("%c ", t)
-    xios_log = open(f'/scratch/scholar/biovino/RNAdata/Logs/xios_from_rnastructure/xios {now}.log', 'wb')
-    manager_log = open(f'/scratch/scholar/biovino/RNAdata/Logs/rna_manager/manager {now}.log', 'w')
+    print(f'manager:directory={directory}')
 
-    # total number of jobs and number to run simultaneously
-    total = len(filelist[startwith:])
+    # logfile for output
+    now = current_time()
+    xios_log = open(f'{base}/Logs/xios_from_rnastructure/xios{now}.log', 'wb')
+    manager_log = open(f'{base}/Logs/rna_manager/manager{now}.log', 'w')
+    error_log = open(f'{base}/Logs/manager_error/error{now}.log', 'w')
+
+    # total number of jobs
+    total = 10
     total_finished = 0
     total_started = 0
 
     # number of jobs to run simultaneously
-    run = 5
+    run = jobs
     running = 0
-    delay = 2  # time to wait after polling
+    delay = 5  # time to wait after polling
+
+    # check if list of fasta files left to run is shorter than total or run
+    # if total or run are too big, index errors occur
+    listlength = len(filelist[startwith:])
+    if listlength < total:
+      total = listlength
+    if listlength < jobs:
+      run = listlength
 
     # start n jobs, each job sleeps a random number of seconds, then terminates
     joblist = []
@@ -93,8 +132,8 @@ def manager(directory, filelist, startwith):
         while running < run and total_started < total:
             job_id += 1
             fasta = filelist[startwith + total_started]
-            command = f'python /scratch/scholar/biovino/RNA/xios_from_rnastructure.py -i {directory} ' \
-                      f'-c {directory}ctfiles -x {directory}xiosfiles -f {fasta}'
+            command = f'python {pythonexe}/xios_from_rnastructure.py -i {directory} ' \
+                      f'-c {directory}/ctfiles -x {directory}/xiosfiles -f {fasta} -y {pythonexe} -r {rnaexe}'
             print(f'starting job {job_id}: {fasta} ')
             job = sub.Popen(command, shell=True, stdout=xios_log, stderr=xios_log)
             joblist.append([job_id, job, fasta])
@@ -102,6 +141,7 @@ def manager(directory, filelist, startwith):
             total_started += 1
 
         # poll all jobs in joblist
+        time.sleep(delay)
         print('\nPolling')
         to_remove = []
         for j in joblist:
@@ -110,8 +150,8 @@ def manager(directory, filelist, startwith):
             print(f'\tjob {id} ...', end='')
             result = job.poll()
 
-            if result != None:
-                # None indicates job is still running
+            if result != None:  # None indicates job is still running
+                j.append(result)
                 print('finished')
                 to_remove.append(j)
 
@@ -121,40 +161,65 @@ def manager(directory, filelist, startwith):
         # remove all finished jobs. Can't do it above because it shortens the joblist
         # and some jobs don't get polled
         for j in to_remove:
-            manager_log.write(f'{j[2]}\n') # third index has fasta file name
-            manager_log.flush()
+
+            # check for exit status
+            # write fasta file name to file, and other marked attributes
+            now = current_time()
+            if j[3] == 2:
+                error_log.write(f'{j[2]}\t job id: {j[0]}\t exit status: {j[3]}\t time: {now}\n')
+                error_log.flush()
+            else:
+                manager_log.write(f'{j[2]}\t job id: {j[0]}\t time: {now}\n')
+                manager_log.flush()
+
+            # remove finished jobs
             joblist.remove(j)
             running -= 1
             total_finished += 1
 
         print(f'\nrunning:{running}\tfinished: {total_finished}')
-        time.sleep(delay)
 
     xios_log.close()
     manager_log.close()
+    error_log.close()
 
 
 def main():
     """---------------------------------------------------------------------------------------------
-    Initializes directory, gets list of files from get_file_list() and sends to manager()
+    Initializes directory, gets list of files from get_file_list(), checks if there is a log file and
+    reads it to find last fasta file worked on, and sends to manager()
     ---------------------------------------------------------------------------------------------"""
 
+    # base = directory of fasta files, jobs = number of concurrent jobs to work on
+    # pythonexe = directory of python files, rnaexe = directory of RNAstructure files
+    # w = window, d = deltaG (both arguments for xios_from_rnastructure.py)
+    base = sys.argv[1]
+    pythonexe = sys.argv[2]
+    rnaexe = sys.argv[3]
+    jobs = int(sys.argv[4])
+    w = int(sys.argv[5])
+    d = int(sys.argv[6])
+
     # directory of fasta files, get filelist
-    directory = '/scratch/scholar/biovino/RNAdata/TestData/'
+    directory = base + '/lncRNA500'
+    print(f'base={base} directory={directory}')
     filelist = get_file_list(directory)
 
     # create directory for log files if one does not exist
-    path = '/scratch/scholar/biovino/RNAdata/Logs/'
+    path = base + '/Logs/'
     if os.path.isdir(path) != True:
         os.mkdir(path)
         os.mkdir(path+'xios_from_rnastructure')
         os.mkdir(path+'rna_manager')
+        os.mkdir(path+'manager_error')
         startwith = 0
     else:
-        startwith = check_logs(filelist)
+        startwith = check_logs(base, filelist)
 
     # call manager
-    manager(directory, filelist, startwith)
+    manager(base, pythonexe, rnaexe, jobs, w, d, filelist, startwith, directory)
+
+    # python /scratch/scholar/biovino/BIOL494/rna_manager.py /scratch/scholar/biovino/RNAdata /scratch/scholar/mgribsko/RNA /scratch/scholar/mgribsko/RNAstructure 5 4 5
 
 
 main()
