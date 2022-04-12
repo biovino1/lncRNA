@@ -107,7 +107,7 @@ def manager(base, pythonexe, rnaexe, jobs, w, d, filelist, startwith, directory)
     error_log = open(f'{base}/Logs/manager_error/error{now}.log', 'w')
 
     # total number of jobs
-    total = 10
+    total = len(filelist)
     total_finished = 0
     total_started = 0
 
