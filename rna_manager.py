@@ -4,11 +4,10 @@ Run multiple jobs using subprocess.Popen().
 total is the total number of jobs to run.
 run is the number to keep running at the same time
 
-Ben Iovino    5 April 2022
+Ben Iovino    14 April 2022
 ================================================================================================="""
 
 import subprocess as sub
-import random
 import time
 import os
 import sys
@@ -190,15 +189,12 @@ def main():
     reads it to find last fasta file worked on, and sends to manager()
     ---------------------------------------------------------------------------------------------"""
 
-    # base = directory of fasta files, jobs = number of concurrent jobs to work on
-    # pythonexe = directory of python files, rnaexe = directory of RNAstructure files
-    # w = window, d = deltaG (both arguments for xios_from_rnastructure.py)
-    base = sys.argv[1]
-    pythonexe = sys.argv[2]
-    rnaexe = sys.argv[3]
-    jobs = int(sys.argv[4])
-    w = int(sys.argv[5])
-    d = int(sys.argv[6])
+    base = sys.argv[1]  # directory of fasta files
+    pythonexe = sys.argv[2]  # directory of python executables
+    rnaexe = sys.argv[3]  # directory of RNAstructure executables
+    jobs = int(sys.argv[4])  # number of concurrent jobs to work on
+    w = int(sys.argv[5])  # window param for xios_from_rnastructure.py
+    d = int(sys.argv[6])  # delta delta G param for xios_from_rnastructure.py
 
     # directory of fasta files, get filelist
     directory = base + '/lncRNA500'
