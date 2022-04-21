@@ -4,7 +4,7 @@ Run multiple jobs using subprocess.Popen().
 total is the total number of jobs to run.
 run is the number to keep running at the same time
 
-Ben Iovino    14 April 2022
+Ben Iovino    19 April 2022
 ================================================================================================="""
 
 import subprocess as sub
@@ -60,24 +60,29 @@ def check_logs(base, filelist):
 
     path = base + '/Logs/rna_manager/'
 
-    # Open latest file in directory and get last line in file
+    # Open latest file in log directory and make a list of fasta file names
     files = os.listdir(path)
     paths = [os.path.join(path, basename) for basename in files]
     latestfile = max(paths, key=os.path.getctime)
+    loglist = list()
     with open(latestfile, 'r') as logfile:
+        for line in logfile:
+            loglist.append(line.split('\t')[0])
 
-        # If manager log is empty, exit script
-        fastalist = list()
-        try:
-          for line in logfile:
-              fastalist.append(line.split('\t')[0])
-          fastalist.sort()
-          lastfasta = fastalist[-1]
-          startwith = filelist.index(lastfasta) + 1  # Add one to index so fasta sequence after last is next up
-          return startwith
-        except IndexError:
-          print('ERROR: manager log is empty')
-          exit(1)
+    # Sort loglist so it is sorted like filelist
+    # If loglist is empty, return with index of 0
+    loglist.sort()
+    if len(loglist) == 0:
+        startwith = 0
+        return startwith
+
+    # If loglist is not empty, return with corresponding index in filelist if lastfasta is in filelist
+    lastfasta = loglist[-1]
+    if lastfasta in filelist:
+        startwith = filelist.index(lastfasta) + 1  # Add one to index so fasta sequence after last is next up
+    else:
+        startwith = 0
+    return startwith
 
 
 def manager(base, pythonexe, rnaexe, jobs, w, d, filelist, startwith, directory):
@@ -197,7 +202,7 @@ def main():
     d = int(sys.argv[6])  # delta delta G param for xios_from_rnastructure.py
 
     # directory of fasta files, get filelist
-    directory = base + '/lncRNA500'
+    directory = base + '/lncRNA2500'
     print(f'base={base} directory={directory}')
     filelist = get_file_list(directory)
 
