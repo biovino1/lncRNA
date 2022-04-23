@@ -15,13 +15,16 @@ def main():
     # Define folder path
     path = "C:/Users/biovi/PycharmProjects/BIOL494"
 
+    print('Running Genome_Reading.py\n')
     sub.run(['python', 'Genome_Reading.py'])
 
+    print('Running Fasta_Cleaning.py\n')
     sub.run(['python', 'Fasta_Cleaning.py'])
 
     # Delete directory for raw data
     shutil.rmtree(path + "/RawData")
 
+    print('Running Fasta_Parsing.py\n')
     sub.run(['python', 'Fasta_Parsing.py'])
 
     # Delete directory for clean data

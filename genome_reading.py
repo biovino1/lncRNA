@@ -197,7 +197,7 @@ def measure_dicts(transcriptdict):
     ================================================================================================================="""
 
     # Initialize the amount of dictionaries you want to create and a list for the dictionaries
-    dictcount = 5
+    dictcount = 8
     dictlist = list()
 
     # Initialize dictionaries and counts
@@ -248,20 +248,13 @@ def main():
     corresponding files in the new directory.
     ================================================================================================================="""
 
-    # Prompt the user for GTF and genome file names
-    file = input("Enter GTF file name: ")
-    print()
+    # Initialize files
+    gtffile = 'lncipedia_5_2_hc_hg19.gtf'
+    genomefile = 'Homo_sapiens.GRCh37.dna.alt.fa'
 
-    file1 = input("Enter genome file name: ")
-    print()
-
-    # Call the get_dict function providing the GTF file name as a parameter
-    exondict_sorted = get_dict(file)
-
-    # Call the get_fasta function providing the genome file name and sorted dict as parameters
-    transcriptdict = get_fasta(file1, exondict_sorted)
-
-    # Call the measure_dicts function providing the fasta dictionary as a parameter
+    # Call the each function providing previous outputs as parameters
+    exondict_sorted = get_dict(gtffile)
+    transcriptdict = get_fasta(genomefile, exondict_sorted)
     dictlist = measure_dicts(transcriptdict)
 
     # Define folder path and make directory for fastadict files
