@@ -58,19 +58,7 @@ def parse_fasta(file, path):
                             # Write sequence ID and sequence into file
                             fastafile.write(sequence_id.rstrip()+' '+str(fasta_length)+'\n')
                             fastafile.write(str(fasta))
-                '''
-                # If above 501+500*8, place in large directory
-                if fasta_length > 4000:
 
-                    if not os.path.exists(f'{path}/lncRNAlarge'):
-                        os.mkdir(f'{path}/lncRNAlarge')
-
-                        with open(f'{path}/lncRNAlarge/'
-                                    f'{sequence_id[1:].rstrip().replace(":", "-")}.fa', 'w') as fastafile:
-
-                            fastafile.write(sequence_id.rstrip() + ' ' + str(fasta_length) + '\n')
-                            fastafile.write(str(fasta))
-                '''
                 # Reset the fasta sequence and update seq ID
                 fasta = list()
                 sequence_id = line

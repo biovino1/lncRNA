@@ -7,7 +7,6 @@ for each exon's fasta sequence.
 Ben Iovino  1/28/2022   BIOL494, lncRNA Sequence and Folding
 ====================================================================================================================="""
 
-from pprint import pprint
 import os
 
 
@@ -59,7 +58,11 @@ def get_dict(file):
 
     # # Sort the exons by chromosome number and beginning position
     exondict_sorted = dict()
+
+    # Sort the exons by chromosome number and beginning position
     for id in sorted(exondict, key=lambda x: exondict[x][0]):
+
+        # Add each exon to dictionary of sorted exons
         exondict_sorted[id] = exondict[id]
 
     return exondict_sorted
@@ -88,7 +91,7 @@ def process_chromosome(chromosome_id, chromosome, exondict_sorted):
         if item[1][0] == chromosome_id[0][1:]:
 
             # Determine which part of chromosome belongs to exon's sequence
-            sequence = chromosome[int(item[1][1]):int(item[1][2])+1]
+            sequence = chromosome[int(item[1][1]):int(item[1][2])]
 
             # Update the dictionary with the exon ID and a list for its value
             fastadict.update({item[0]: list()})
@@ -107,12 +110,14 @@ def get_fasta(genome, exondict_sorted):
     This function accepts a genome file and the sorted dictionary from get_dict(). It opens the genome file and moves
     sequentially from each chromosome. The chromosome id is stored along with its entire sequence. The sorted dictionary
     of exons is then read and process_chromosome() is used to read the sequence of the chromosome and extract the exon
-    sequence, which is stored in a new dictionary.
+    sequence, which is stored in a new dictionary. The exon sequences belonging to the same transcript ID are then
+    combined and their lengths are added together.
     ================================================================================================================="""
 
     # Initialize a dictionary with exon ID as keys and a list as their value
     fastadict = dict()
 
+    # Open genome file
     with open(genome, 'r') as file:
 
         # Initialize condition for finding a new chromosome in the genome file
@@ -121,6 +126,7 @@ def get_fasta(genome, exondict_sorted):
         # Initialize a list for the fasta sequence of a chromosome
         chromosome = list()
 
+        # Use a for loop to read through each line in genome file
         for line in file:
 
             # Use an if statement to determine if we have not read a new chromosome and line starts with '>'
@@ -132,23 +138,18 @@ def get_fasta(genome, exondict_sorted):
                 # Initialize chromosome number and add 'chr' to match gtf dictionary
                 chromosome_id = line[:1] + 'chr' + line[1:]
 
-            # Use an if statement to determine if we are in a new chromosome and line starts with '>'
+            # If entering new chromosome, obtain fasta sequences for all exons in chrom with process_chromosome
             elif new_chromosome is True and line.startswith('>'):
 
-                # Use process_chromosome to obtain fasta sequence for the exon
                 # Also update the dictionary with this key:value pair
                 fastadict.update(process_chromosome(chromosome_id, chromosome, exondict_sorted))
 
-                # Reset the chromosome fasta sequence
+                # Reset the chromosome fasta sequence and update chrom id
                 chromosome = list()
-
-                # Update the chromosome number
                 chromosome_id = line[:1] + 'chr' + line[1:]
 
-            # Use an if statement to determine if we are in a new chromosome and want to add to fasta sequence
+            # If remaining in chromosome, add to chrom fasta sequence
             elif new_chromosome is True:
-
-                # Update the chromosome fasta sequence
                 chromosome.append(line.rstrip())
 
     # Initialize another dictionary of fasta sequences
@@ -157,75 +158,56 @@ def get_fasta(genome, exondict_sorted):
     # Read through each exon in the fastadict
     for item in fastadict.items():
 
-        print(item)
+        # item is ('id TTTY11:3_exon1', [94, 'TTTTTTTATG...'])
 
         # Set the transcript ID as a variable. This makes referring to the transcript ID easier
         keyid = item[0].split('_')[0]
+
+        print(keyid)
 
         # Add first exon's length and fasta sequence to the value list if new transcript
         if keyid not in transcriptdict:
             transcriptdict.update({keyid: list((int(item[1][0]), str(item[1][1])))})
 
-        # Add the length of the new exon to the previous one(s)
-        else:
+        # Add the length of the new exon to transcript
+        if keyid in transcriptdict:
             transcriptdict[keyid][0] += int(item[1][0])
 
-            # Add the fasta sequence of the new exon to the previous one(s)
+            # Add the fasta sequence of the new exon to transcript
             transcriptdict[keyid][1] += str(item[1][1])
 
     return transcriptdict
 
 
-def measure_dicts(transcriptdict):
+def write_fasta(transcriptdict, path):
     """=================================================================================================================
-    This function accepts a dictionary of fasta sequences, measures the length of the sequences, and adds them to a
-    dictionary corresponding to their length. The amount of dictionaries is intialized at the very beginning, and the
-    lengths are inherent in the loops that create them i.e. dictcount = 5; 'fastadict' + str(500 * i) = fastadict in
-    increments of 500 for 5 dictionaries. fastadictlarge catches all sequences above the maximum specified length.
+    This function accepts a dictionary with transcripts of varying lengths. The length of each transcript is measured
+    and written out to its respective directory as a fasta file.
+
+    :param transcriptdict: transcript id is key, value is a list with length and fasta sequence
+    :param path: full directory path for files
     ================================================================================================================="""
 
-    # Initialize the amount of dictionaries you want to create and a list for the dictionaries
-    dictcount = 8
-    dictlist = list()
-
-    # Initialize dictionaries and counts
-    for i in range(1, dictcount+1):
-        globals()['fastadict' + str(500 * i)] = dict()
-        globals()['count'+str(500 * i)] = 0
-    fastadictlarge = dict()
-    countlarge = 0
-
-    # Use a for loop to break each fasta sequence into a list of strings
-    # where each string is 100 characters in length
+    # Place fasta file in respective directory
+    # Change end of range to change number of directories
     for item in transcriptdict.items():
-        n = 100
-        fasta = list()
-        for i in range(0, len(item[1][1]), n):
-            fasta.append(item[1][1][i:i+n])
-        item[1][1] = fasta
+        fasta_length = item[1][0]"C:/Users/biovi/PycharmProjects/BIOL494/Data"
+        sequence_id = item[0].replace('id ', '>')
+        fasta = item[1][1]
+        for i in range(0, 8):
+            if (0 + 500 * i) < fasta_length < (501 + 500 * i):
 
-        # Add fasta sequence to the corresponding dictionary and update the count
-        for i in range(1, dictcount+1):
-            if ((i-1)*500) < item[1][0] <= (i*500):
-                globals()['count'+str(i*500)] += 1
-                globals()['fastadict'+str(i*500)].update({item[0]: item[1]})
+                # Make a directory for these sequences if it does not exist
+                if not os.path.exists(f'{path}/lncRNA{500 + 500 * i}'):
+                    os.mkdir(f'{path}/lncRNA{500 + 500 * i}')
 
-        # Add sequences above the desired length to fastadictlarge
-        if (500*dictcount) < item[1][0]:
-            countlarge += 1
-            fastadictlarge.update({item[0]: item[1]})
+                # Open fasta file in respective directory with respective name
+                with open(f'{path}/lncRNA{500 + 500 * i}/'
+                        f'{sequence_id[1:].replace(":", "-")}.fa', 'w') as fastafile:
 
-    # Append each dictionary of fasta dictionaries to a list
-    for i in range(1, dictcount+1):
-        dictlist.append(globals()['fastadict' + str(500 * i)])
-    dictlist.append(fastadictlarge)
-
-    # Print counts to check amount of fasta sequences there are in each file
-    for i in range(1, dictcount+1):
-        print(globals()['count'+str(i*500)])
-    print(countlarge)
-
-    return dictlist
+                    # Write sequence ID and sequence into file
+                    fastafile.write(sequence_id + ' ' + str(fasta_length) + '\n')
+                    fastafile.write(str(fasta))
 
 
 def main():
@@ -235,31 +217,18 @@ def main():
     corresponding files in the new directory.
     ================================================================================================================="""
 
-    # Initialize files
+    # Initialize files and directories
     gtffile = 'lncipedia_5_2_hc_hg19.gtf'
     genomefile = 'Homo_sapiens.GRCh37.dna.alt.fa'
+
+    if not os.path.exists("C:/Users/biovi/PycharmProjects/BIOL494/Data"):
+        os.mkdir("C:/Users/biovi/PycharmProjects/BIOL494/Data")
+    path = "C:/Users/biovi/PycharmProjects/BIOL494/Data/"
 
     # Call the each function providing previous outputs as parameters
     exondict_sorted = get_dict(gtffile)
     transcriptdict = get_fasta(genomefile, exondict_sorted)
-    dictlist = measure_dicts(transcriptdict)
-
-    # Define folder path and make directory for fastadict files
-    path = "C:/Users/biovi/PycharmProjects/BIOL494/RawData"
-    os.mkdir(path)
-
-    # Use a for loop to open and write files dependent on length of dictlist
-    # Each dictionary is written into a separate file
-    for i in range(1, len(dictlist)):
-
-        with open(path+"/lncRNA_fasta_"+str(i*500)+".txt", "w") as globals()['file'+str(i*500)]:
-
-            # Pretty print the dictionary into output file
-            pprint(globals()['fastadict'+str(i*500)], stream=globals()['file'+str(i*500)], sort_dicts=False)
-
-    # Write fastadictlarge into a separate file
-    with open(path+"/lncRNA_fasta_large.txt", "w") as filelarge:
-        pprint(dictlist[len(dictlist)-1], stream=filelarge, sort_dicts=False)
+    write_fasta(transcriptdict, path)
 
 
 main()
