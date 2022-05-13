@@ -163,7 +163,7 @@ def get_fasta(genome, exondict_sorted):
         # Set the transcript ID as a variable. This makes referring to the transcript ID easier
         keyid = item[0].split('_')[0]
 
-        print(keyid)
+        # key id is ('id TTY11:3')
 
         # Add first exon's length and fasta sequence to the value list if new transcript
         if keyid not in transcriptdict:
@@ -191,7 +191,7 @@ def write_fasta(transcriptdict, path):
     # Place fasta file in respective directory
     # Change end of range to change number of directories
     for item in transcriptdict.items():
-        fasta_length = item[1][0]"C:/Users/biovi/PycharmProjects/BIOL494/Data"
+        fasta_length = item[1][0]
         sequence_id = item[0].replace('id ', '>')
         fasta = item[1][1]
         for i in range(0, 8):
@@ -227,8 +227,15 @@ def main():
 
     # Call the each function providing previous outputs as parameters
     exondict_sorted = get_dict(gtffile)
+    print('Exons have been gathered.')
+    print()
+
     transcriptdict = get_fasta(genomefile, exondict_sorted)
+    print('Fasta sequences have been gathered.')
+    print()
+
     write_fasta(transcriptdict, path)
+    print('Fasta files have been created.')
 
 
 main()

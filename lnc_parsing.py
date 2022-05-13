@@ -41,7 +41,7 @@ def parse_fasta(file, path):
                 # Join the fasta sequence together
                 fastastring = ''
                 fasta = fastastring.join(fasta)
-                fasta_length = len(fasta)
+                fasta_length = len(fasta) - fasta.count('\n')
 
                 # Place fasta file in respective directory
                 for i in range(0, 8):
@@ -77,9 +77,9 @@ def main():
     ================================================================================================================="""
 
     # Make directory for parsed files, call parse_fasta()
-    os.mkdir("C:/Users/biovi/PycharmProjects/BIOL494/hcData")
-    path = "C:/Users/biovi/PycharmProjects/BIOL494/hcData/"
-    parse_fasta('lnc_hc.fa', path)
+    os.mkdir("C:/Users/biovi/PycharmProjects/BIOL494/fdbData")
+    path = "C:/Users/biovi/PycharmProjects/BIOL494/fdbData/"
+    parse_fasta('lnc_fdb.fa', path)
 
 
 main()
