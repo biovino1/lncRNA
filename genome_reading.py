@@ -2,9 +2,10 @@
 This program reads a GTF file and creates a multilayered data structure. Every exon in each transcript is stored as a
 dictionary ID with it's chromosome number, beginning, and end positions store as a list for the value. The script then
 reads the human genome file one chromosome at a time. The dictionary from the GTF file is used to check the genome file
-for each exon's fasta sequence.
+for each exon's fasta sequence. Exons from the same transcript have their sequences combined and are reversed and
+translated if they belong on a negative strand of DNA.
 
-Ben Iovino  1/28/2022   BIOL494, lncRNA Sequence and Folding
+Ben Iovino  5/18/2022   BIOL494, lncRNA Sequence and Folding
 ====================================================================================================================="""
 
 import os
@@ -20,7 +21,7 @@ def get_dict(file):
     transcript_dict = dict()
 
     # Initialize a dictionary for exons
-    exondict = dict()
+    exon_dict = dict()
 
     # Read gtf file and split each line
     with open(file, 'r') as file:
@@ -32,7 +33,17 @@ def get_dict(file):
             # This creates a second list inside of the first one
             line[8] = line[8].split(";")
 
-            # Determine if transcipt is a dict key
+            # Update transcript dict with new exon
+            if line[8][1] in transcript_dict:
+
+                # Access transcript ID and add one to the value
+                transcript_dict[line[8][1]] += 1
+
+                # Store exon name as a string for the exondict
+                exon = str('id ' + line[8][1].split(' ')[2] + '_' + line[2] + str(transcript_dict[line[8][1]]))
+                exon_dict.update({exon: list((line[0], int(line[3])-1, line[4], line[6]))})
+
+            # Update exon count using transcript_dict, add exon to exondict
             if line[8][1] not in transcript_dict:
 
                 # If transcript is not a key, add transcript as a dictionary key
@@ -43,29 +54,15 @@ def get_dict(file):
                 # 'id [transcript id]_exon[#]
                 exon = str('id ' + line[8][1].split(' ')[2] + '_' + line[2] + str(transcript_dict[line[8][1]]))
 
-                # Add exon to exon dictionary along with chromosome, beginning, and end positions in the value list
-                exondict.update({exon: list((line[0], line[3], line[4]))})
-
-            # Update transcript dict with new exon
-            else:
-
-                # Access transcript ID and add one to the value
-                transcript_dict[line[8][1]] += 1
-
-                # Store exon name as a string for the exondict
-                exon = str('id ' + line[8][1].split(' ')[2] + '_' + line[2] + str(transcript_dict[line[8][1]]))
-                exondict.update({exon: list((line[0], line[3], line[4]))})
+                # Add exon to exon dict along with chrom, begin/end positions, and strand in value list
+                exon_dict.update({exon: list((line[0], int(line[3])-1, line[4], line[6]))})
 
     # # Sort the exons by chromosome number and beginning position
-    exondict_sorted = dict()
+    exon_dict_sorted = dict()
+    for id in sorted(exon_dict, key=lambda x: exon_dict[x][0]):
+        exon_dict_sorted[id] = exon_dict[id]
 
-    # Sort the exons by chromosome number and beginning position
-    for id in sorted(exondict, key=lambda x: exondict[x][0]):
-
-        # Add each exon to dictionary of sorted exons
-        exondict_sorted[id] = exondict[id]
-
-    return exondict_sorted
+    return exon_dict_sorted
 
 
 def process_chromosome(chromosome_id, chromosome, exondict_sorted):
@@ -78,31 +75,28 @@ def process_chromosome(chromosome_id, chromosome, exondict_sorted):
     chromosome_id = chromosome_id.split(' ')
 
     # Initialize dictionary with exon ID as dict ID and fasta sequence as value
-    fastadict = dict()
+    fasta_dict = dict()
 
     # Join the chromosome list as a string
     s = ''
     chromosome = s.join(chromosome)
 
     # Check which exons share the same chromosome
-    for item in exondict_sorted.items():
-
-        # Check chromosome of exon vs chromosome from genome
-        if item[1][0] == chromosome_id[0][1:]:
+    for key, value in exondict_sorted.items():
+        if value[0] == chromosome_id[0][1:]:
 
             # Determine which part of chromosome belongs to exon's sequence
-            sequence = chromosome[int(item[1][1]):int(item[1][2])]
+            sequence = chromosome[int(value[1]):int(value[2])]
 
             # Update the dictionary with the exon ID and a list for its value
-            fastadict.update({item[0]: list()})
+            fasta_dict.update({key: list()})
 
-            # Append the length of the fasta sequence to the exon ID value
-            fastadict[item[0]].append(len(sequence))
+            # Append the length, fasta seq, and strand to exon ID value
+            fasta_dict[key].append(len(sequence))
+            fasta_dict[key].append(sequence)
+            fasta_dict[key].append(value[3])
 
-            # Append the fasta sequence to the exon ID value
-            fastadict[item[0]].append(sequence)
-
-    return fastadict
+    return fasta_dict
 
 
 def get_fasta(genome, exondict_sorted):
@@ -115,9 +109,8 @@ def get_fasta(genome, exondict_sorted):
     ================================================================================================================="""
 
     # Initialize a dictionary with exon ID as keys and a list as their value
-    fastadict = dict()
+    fasta_dict = dict()
 
-    # Open genome file
     with open(genome, 'r') as file:
 
         # Initialize condition for finding a new chromosome in the genome file
@@ -142,7 +135,7 @@ def get_fasta(genome, exondict_sorted):
             elif new_chromosome is True and line.startswith('>'):
 
                 # Also update the dictionary with this key:value pair
-                fastadict.update(process_chromosome(chromosome_id, chromosome, exondict_sorted))
+                fasta_dict.update(process_chromosome(chromosome_id, chromosome, exondict_sorted))
 
                 # Reset the chromosome fasta sequence and update chrom id
                 chromosome = list()
@@ -153,30 +146,32 @@ def get_fasta(genome, exondict_sorted):
                 chromosome.append(line.rstrip())
 
     # Initialize another dictionary of fasta sequences
-    transcriptdict = dict()
+    transcript_dict = dict()
 
-    # Read through each exon in the fastadict
-    for item in fastadict.items():
-
-        # item is ('id TTTY11:3_exon1', [94, 'TTTTTTTATG...'])
+    # Add exons together if they belong on same transcript
+    for item in fasta_dict.items():  # item is ('id TTTY11:3_exon1', [94, 'TTTTTTTATG...', '-'])
 
         # Set the transcript ID as a variable. This makes referring to the transcript ID easier
         keyid = item[0].split('_')[0]
 
-        # key id is ('id TTY11:3')
+        # Add the length, fasta seq, and strand of the new exon to transcript
+        if keyid in transcript_dict:
+            transcript_dict[keyid][0] += int(item[1][0])
+            transcript_dict[keyid][1] += str(item[1][1])
 
         # Add first exon's length and fasta sequence to the value list if new transcript
-        if keyid not in transcriptdict:
-            transcriptdict.update({keyid: list((int(item[1][0]), str(item[1][1])))})
+        if keyid not in transcript_dict:
+            transcript_dict.update({keyid: list((int(item[1][0]), str(item[1][1]), str(item[1][2])))})
 
-        # Add the length of the new exon to transcript
-        if keyid in transcriptdict:
-            transcriptdict[keyid][0] += int(item[1][0])
+    # Reverse and translate the negative strand transcripts using translate()
+    table = {65: 'T', 84: 'A', 67: 'G', 71: 'C'}
+    for item in transcript_dict.items():
+        keyid = item[0]
+        if transcript_dict[keyid][2] == '-':
+            transcript_dict[keyid][1] = transcript_dict[keyid][1][::-1]
+            transcript_dict[keyid][1] = transcript_dict[keyid][1].translate(table)
 
-            # Add the fasta sequence of the new exon to transcript
-            transcriptdict[keyid][1] += str(item[1][1])
-
-    return transcriptdict
+    return transcript_dict
 
 
 def write_fasta(transcriptdict, path):
@@ -190,10 +185,17 @@ def write_fasta(transcriptdict, path):
 
     # Place fasta file in respective directory
     # Change end of range to change number of directories
-    for item in transcriptdict.items():
-        fasta_length = item[1][0]
-        sequence_id = item[0].replace('id ', '>')
-        fasta = item[1][1]
+    for key, value in transcriptdict.items():
+        fasta_length = value[0]
+        sequence_id = key.replace('id ', '>')
+        fasta = value[1]
+
+        # Add newline character every 60 letters
+        lines = list()
+        for i in range(0, len(fasta), 60):
+            lines.append(fasta[i:i + 60])
+        lines = '\n'.join(lines)
+
         for i in range(0, 8):
             if (0 + 500 * i) < fasta_length < (501 + 500 * i):
 
@@ -203,11 +205,11 @@ def write_fasta(transcriptdict, path):
 
                 # Open fasta file in respective directory with respective name
                 with open(f'{path}/lncRNA{500 + 500 * i}/'
-                        f'{sequence_id[1:].replace(":", "-")}.fa', 'w') as fastafile:
+                        f'{sequence_id[1:].replace(":", "-")}.fa', 'w') as fasta_file:
 
                     # Write sequence ID and sequence into file
-                    fastafile.write(sequence_id + ' ' + str(fasta_length) + '\n')
-                    fastafile.write(str(fasta))
+                    fasta_file.write(sequence_id + ' ' + str(fasta_length) + '\n')
+                    fasta_file.write(str(lines))
 
 
 def main():
@@ -226,15 +228,15 @@ def main():
     path = "C:/Users/biovi/PycharmProjects/BIOL494/Data/"
 
     # Call the each function providing previous outputs as parameters
-    exondict_sorted = get_dict(gtffile)
+    exon_dict_sorted = get_dict(gtffile)
     print('Exons have been gathered.')
     print()
 
-    transcriptdict = get_fasta(genomefile, exondict_sorted)
+    transcript_dict = get_fasta(genomefile, exon_dict_sorted)
     print('Fasta sequences have been gathered.')
     print()
 
-    write_fasta(transcriptdict, path)
+    write_fasta(transcript_dict, path)
     print('Fasta files have been created.')
 
 
