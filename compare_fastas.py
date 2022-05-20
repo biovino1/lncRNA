@@ -40,10 +40,12 @@ def compare_files(path1, path2, file_list1, file_list2):
 
     # Dict for storing which files and how many lines don't match
     mismatches = collections.defaultdict(int)
+    file_count = 0
 
     # Using bigger file_list to move through smaller one
     for file in file_list1:
         if file in file_list2:
+            file_count += 1
             with open(path1+file, 'r') as file1, open(path2+file, 'r') as file2:
 
                 # Hash both lines at same time and compare
@@ -58,9 +60,13 @@ def compare_files(path1, path2, file_list1, file_list2):
                                 mismatches[file] += 1
 
     # Write mismatches in file
+    value_count = 0
     with open('fasta_mismatches.txt', 'w') as file:
         for key, value in mismatches.items():
             file.write(f'{key}: {value} \n')
+            if value == (1 or 2):
+                value_count += 1
+        file.write(str(file_count)+', '+str(value_count))
 
 
 def main():
