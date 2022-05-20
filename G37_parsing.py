@@ -63,6 +63,7 @@ def write_chromosomes(file):
 
     return
 
+
 def main():
     """=================================================================================================================
     Use the main function to ask for the genome file name and call the write_chromosomes function to write the desired
@@ -76,4 +77,6 @@ def main():
     # Call the write_chromosomes function
     write_chromosomes(file)
 
-main()
+
+if __name__ == '__main__':
+    main()

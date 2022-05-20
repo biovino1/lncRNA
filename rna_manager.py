@@ -223,4 +223,5 @@ def main():
     # python /scratch/scholar/biovino/BIOL494/rna_manager.py /scratch/scholar/biovino/RNAdata /scratch/scholar/mgribsko/RNA /scratch/scholar/mgribsko/RNAstructure 5 4 5
 
 
-main()
+if __name__ == '__main__':
+    main()

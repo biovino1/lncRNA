@@ -57,10 +57,5 @@ def main():
     print(len(missing_keys))
 
 
-main()
-
-
-
-
-
-
+if __name__ == '__main__':
+    main()

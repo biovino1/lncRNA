@@ -35,7 +35,6 @@ def read_directories(path, dir_list):
                                 if file_path not in fa_dict.keys():  # add file path to dictionary keys
                                     fa_dict.update({file_path: str()})
                                 fa_dict[file_path] += letter  # add letter to dictionary using file path as key
-                                print(f'{file_path} had an oopsie')
 
     # Write out dictionary keys and values
     with open('bad_bases.txt', 'w') as file:
@@ -56,4 +55,5 @@ def main():
     read_directories(path, dir_list)
 
 
-main()
+if __name__ == '__main__':
+    main()

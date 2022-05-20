@@ -240,4 +240,5 @@ def main():
     print('Fasta files have been created.')
 
 
-main()
+if __name__ == '__main__':
+    main()

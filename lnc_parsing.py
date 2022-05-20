@@ -57,7 +57,7 @@ def parse_fasta(file, path):
 
                             # Write sequence ID and sequence into file
                             fastafile.write(sequence_id.rstrip()+' '+str(fasta_length)+'\n')
-                            fastafile.write(str(fasta))
+                            fastafile.write(str(fasta.strip()))
 
                 # Reset the fasta sequence and update seq ID
                 fasta = list()
@@ -82,4 +82,5 @@ def main():
     parse_fasta('lnc_fdb.fa', path)
 
 
-main()
+if __name__ == '__main__':
+    main()
